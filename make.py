@@ -42,6 +42,7 @@ def append(file, line):
     else:
         sys.stdout.write(line)
 
+
 def create_docker_file(output, properties, templates):
     from datetime import date
 
