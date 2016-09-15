@@ -12,9 +12,9 @@ COMMON_TEMPLATE='common'
 def parser_args():
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument('template', help='Template files', nargs='+', metavar='Template', type=str)
     parser.add_argument('-o', '--output', help='Output docker file name', type=str, required=False)
     parser.add_argument('-p', '--properties', help='Properties file', type=str, required=False)
-    parser.add_argument('-t', '--template', help='Template files', nargs='*', type=str, required=True)
     return parser.parse_args()
 
 

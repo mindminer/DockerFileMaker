@@ -26,7 +26,7 @@ VOLUME ${CATALINA_BASE}/instance_${CATALINA_INSTANCE_NAME}/logs
 
 RUN cp ${CATALINA_BASE}/default/conf/web.xml conf/. \
     && cp ${CATALINA_BASE}/default/conf/context.xml conf/.
-ADD ./server.xml ${CATALINA_BASE}/default/conf/server.xml
+ADD ./server.xml ${CATALINA_BASE}/instance_${CATALINA_INSTANCE_NAME}/conf/server.xml
 
 WORKDIR ${CATALINA_BASE}
 RUN echo $'#!/bin/bash\n\
@@ -139,7 +139,7 @@ RUN chmod ug+x ${CATALINA_BASE}/run.sh
 
 # RUN echo "CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.jasper.runtime.BodyContentImpl.LIMIT_BUFFER=true -Dmail.mime.decodeparameters=true -Xms128m -Xmx512m -XX:MaxPermSize=256m"" >> ${CATALINA_BASE}/instance_${CATALINA_INSTANCE_NAME}/bin/setenv.sh
 
-RUN if 'root' -ne '$${TOMCAT_RUN_USER}' useradd $${TOMCAT_RUN_USER} && chown -R $${TOMCAT_RUN_USER} ${CATALINA_BASE}; then echo 'Tomcat is run under `whoami`'; fi
+RUN if whoami -ne '$${TOMCAT_RUN_USER}' useradd $${TOMCAT_RUN_USER} && chown -R $${TOMCAT_RUN_USER} ${CATALINA_BASE}; then echo 'Tomcat is run under `whoami`'; fi
 
 EXPOSE 8080
 EXPOSE 8443
