@@ -1,0 +1,9 @@
+# 使用哪个基础镜像
+FROM $${FROM}
+
+# 设置环境
+RUN ln -s -f /usr/share/zoneinfo/$${TIME_ZONE} /etc/localtime
+
+# ENTRYPOINT 指定一组命令在容器启动的时候执行，并且这个设置不可改变，如果希望启动容器的时候灵活改变可以改成 CMD
+# 指令执行完后 Docker container 就会停止，执行 tail 指令是为了保持 container 继续执行。
+ENTRYPOINT $${ENTRYPOINT}

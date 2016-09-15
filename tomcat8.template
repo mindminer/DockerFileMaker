@@ -1,0 +1,145 @@
+#########################################
+## 安装 Tomcat
+
+USER root
+
+ENV CATALINA_BASE /opt/tomcat
+ENV TOMCAT_MIRROR_SITE mirror.csclub.uwaterloo.ca
+ENV TOMCAT_VERSION 8.5.5
+
+WORKDIR ${CATALINA_BASE}
+
+# 下载 Tomcat
+RUN set -x \
+    && curl -O http://${TOMCAT_MIRROR_SITE}/apache/tomcat/tomcat-8/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz \
+    && tar -zxvf apache-tomcat-${TOMCAT_VERSION}.tar.gz \
+    && rm -f apache-tomcat-${TOMCAT_VERSION}.tar.gz \
+    && ln -s ${CATALINA_BASE}/apache-tomcat-${TOMCAT_VERSION} ${CATALINA_BASE}/default
+
+# 配置 Tomcat (instance_$${CATALINA_INSTANCE_NAME})
+ENV CATALINA_INSTANCE_NAME $${CATALINA_INSTANCE_NAME}
+WORKDIR ${CATALINA_BASE}/instance_${CATALINA_INSTANCE_NAME}
+
+RUN mkdir bin conf temp webapps work
+# VOLUME 会随机在宿主机的 /var/lib/docker/volumes 目录下创建挂载点，这样可以不需要docker run 的时候指定 -v 参数。
+VOLUME ${CATALINA_BASE}/instance_${CATALINA_INSTANCE_NAME}/logs
+
+RUN cp ${CATALINA_BASE}/default/conf/web.xml conf/. \
+    && cp ${CATALINA_BASE}/default/conf/context.xml conf/.
+ADD ./server.xml ${CATALINA_BASE}/default/conf/server.xml
+
+WORKDIR ${CATALINA_BASE}
+RUN echo $'#!/bin/bash\n\
+\n\
+TOMCAT_DIR=/opt/tomcat\n\
+CATALINA_HOME=$TOMCAT_DIR/default\n\
+INSTANCE_PREFIX=instance_\n\
+\n\
+# User under which tomcat will run\n\
+CATALINA_USER=$${TOMCAT_RUN_USER}\n\
+\n\
+# Time in seconds shutdown script will kill if tomcat is still running\n\
+FORCE_SHUTDOWN=10\n\
+\n\
+#################################\n\
+##### DO NOT TOUCH THE REST #####\n\
+#################################\n\
+\n\
+if [ "z`whoami`" != "z$CATALINA_USER" ]; then\n\
+     echo "You must be $CATALINA_USER user to start this app"\n\
+     exit 1\n\
+fi\n\
+\n\
+syntax () {\n\
+     echo "Usage:"\n\
+     echo "./run.sh [start|stop|status] [instance_name]"\n\
+}\n\
+\n\
+#Make sure the instance directory exists.\n\
+if [ -z "$2" ]; then\n\
+     echo "Second argument must be instance name."\n\
+     syntax\n\
+     exit 1\n\
+elif [ ! -d "$TOMCAT_DIR/$INSTANCE_PREFIX$2" ]; then\n\
+     echo "Instance directory $TOMCAT_DIR/$INSTANCE_PREFIX$2 does not exist."\n\
+     exit 1\n\
+fi\n\
+\n\
+#Setup the instance flag\n\
+CATALINA_INSTANCE=$INSTANCE_PREFIX$2\n\
+JAVA_OPTS="-Dcatalina.instance=$CATALINA_INSTANCE"\n\
+\n\
+#Setup our CATALINA_BASE flag\n\
+CATALINA_BASE="$TOMCAT_DIR/$CATALINA_INSTANCE"\n\
+\n\
+#Setup our Process ID tracker\n\
+CATALINA_PID="$CATALINA_BASE/logs/$CATALINA_INSTANCE.pid"\n\
+\n\
+export TOMCAT_DIR\n\
+export CATALINA_INSTANCE\n\
+export CATALINA_HOME\n\
+export CATALINA_BASE\n\
+export CATALINA_PID\n\
+export JAVA_OPTS\n\
+\n\
+SCRIPT_TO_RUN=$CATALINA_HOME/bin/catalina.sh\n\
+\n\
+# start, stop, run, and status functions\n\
+start() {\n\
+     if [ "z`pgrep -f -U $CATALINA_USER instance=$CATALINA_INSTANCE`" != "z" ]; then\n\
+        echo "Tomcat instance $CATALINA_INSTANCE already started"\n\
+     else\n\
+        echo "Starting Tomcat instance $CATALINA_INSTANCE..."\n\
+        $SCRIPT_TO_RUN start\n\
+        if [ "$?" -eq "0" ]; then\n\
+            echo "Tomcat instance $CATALINA_INSTANCE started"\n\
+        fi\n\
+     fi\n\
+}\n\
+\n\
+stop() {\n\
+     if [ "z`pgrep -f -U $CATALINA_USER instance=$CATALINA_INSTANCE`" = "z" ]; then\n\
+        echo "Tomcat instance $CATALINA_INSTANCE already stopped"\n\
+     else\n\
+        echo "Stopping Tomcat instance $CATALINA_INSTANCE..."\n\
+        $SCRIPT_TO_RUN stop $FORCE_SHUTDOWN -force\n\
+        echo "Tomcat instance $CATALINA_INSTANCE stopped"\n\
+     fi\n\
+}\n\
+\n\
+status() {\n\
+     if [ "z`pgrep -f -U $CATALINA_USER instance=$CATALINA_INSTANCE`" != "z" ]; then\n\
+        echo "Tomcat instance $CATALINA_INSTANCE started"\n\
+     else\n\
+        echo "Tomcat instance $CATALINA_INSTANCE stopped"\n\
+     fi\n\
+}\n\
+\n\
+case "$1" in\n\
+    start)\n\
+        start\n\
+        ;;\n\
+     stop)\n\
+        stop\n\
+        ;;\n\
+     restart)\n\
+        stop\n\
+        start\n\
+        ;;\n\
+     status)\n\
+        status\n\
+        ;;\n\
+     *)\n\
+        echo "Usage: $0 {start|stop|restart|status}"\n\
+        exit 1\n\
+        esac\n'\
+>> ${CATALINA_BASE}/run.sh
+
+RUN chmod ug+x ${CATALINA_BASE}/run.sh
+
+# RUN echo "CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.jasper.runtime.BodyContentImpl.LIMIT_BUFFER=true -Dmail.mime.decodeparameters=true -Xms128m -Xmx512m -XX:MaxPermSize=256m"" >> ${CATALINA_BASE}/instance_${CATALINA_INSTANCE_NAME}/bin/setenv.sh
+
+RUN if 'root' -eq ''$${TOMCAT_RUN_USER}'' useradd $${TOMCAT_RUN_USER}; chown -R $${TOMCAT_RUN_USER} ${CATALINA_BASE}
+
+EXPOSE 8080
+EXPOSE 8443

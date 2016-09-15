@@ -1,0 +1,15 @@
+############################
+# OpenSSH
+# To enable SSH in docker is a bad idea
+
+USER root
+
+RUN yum install -y openssh-server
+RUN chkconfig sshd on
+
+RUN echo '$${SSH-USER-PASSWORD} | passwd root --stdin
+RUN ssh-keygen -t rsa -q -f /root/.ssh/id_rsa -N ''
+RUN cat /root/.ssh/id_rsa >> /root/.ssh/authorized_keys
+RUN chmod 600 /root/.ssh/authorized_keys
+
+EXPOSE 22
