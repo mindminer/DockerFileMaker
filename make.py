@@ -8,12 +8,13 @@ DEFAULT_PROPERTIES_FILE = 'properties'
 DEFAULT_TEMPLATE_POSTFIX = 'template'
 COMMON_TEMPLATE='common'
 
+
 def parser_args():
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument('template', help='Template files', nargs='+', metavar='Template', type=str)
     parser.add_argument('-o', '--output', help='Output docker file name', type=str, required=False)
-    parser.add_argument('-p', '--properties', help='Properties file', type=str, required=True)
-    parser.add_argument('-t', '--template', help='Template files', nargs='*', type=str, required=True)
+    parser.add_argument('-p', '--properties', help='Properties file', type=str, required=False)
     return parser.parse_args()
 
 
@@ -40,6 +41,7 @@ def append(file, line):
         file.write(line)
     else:
         sys.stdout.write(line)
+
 
 def create_docker_file(output, properties, templates):
     from datetime import date
