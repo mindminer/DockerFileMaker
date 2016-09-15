@@ -139,7 +139,7 @@ RUN chmod ug+x ${CATALINA_BASE}/run.sh
 
 # RUN echo "CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.jasper.runtime.BodyContentImpl.LIMIT_BUFFER=true -Dmail.mime.decodeparameters=true -Xms128m -Xmx512m -XX:MaxPermSize=256m"" >> ${CATALINA_BASE}/instance_${CATALINA_INSTANCE_NAME}/bin/setenv.sh
 
-RUN if 'root' -eq '$${TOMCAT_RUN_USER}' useradd $${TOMCAT_RUN_USER}; chown -R $${TOMCAT_RUN_USER} ${CATALINA_BASE}
+RUN if 'root' -ne '$${TOMCAT_RUN_USER}' useradd $${TOMCAT_RUN_USER} && chown -R $${TOMCAT_RUN_USER} ${CATALINA_BASE}
 
 EXPOSE 8080
 EXPOSE 8443
