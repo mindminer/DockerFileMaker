@@ -8,11 +8,12 @@ DEFAULT_PROPERTIES_FILE = 'properties'
 DEFAULT_TEMPLATE_POSTFIX = 'template'
 COMMON_TEMPLATE='common'
 
+
 def parser_args():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--output', help='Output docker file name', type=str, required=False)
-    parser.add_argument('-p', '--properties', help='Properties file', type=str, required=True)
+    parser.add_argument('-p', '--properties', help='Properties file', type=str, required=False)
     parser.add_argument('-t', '--template', help='Template files', nargs='*', type=str, required=True)
     return parser.parse_args()
 
