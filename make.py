@@ -7,7 +7,10 @@ PLACE_HOLDER_PREFIX = '$$'
 DEFAULT_PROPERTIES_FILE = 'properties'
 DEFAULT_TEMPLATE_POSTFIX = 'template'
 COMMON_TEMPLATE='common'
+CONFIG_FILE_NAME='config'
 
+configuration=None
+platform = None
 
 def parser_args():
     import argparse
@@ -19,6 +22,9 @@ def parser_args():
 
 
 def main():
+    configuration = get_properties(None, CONFIG_FILE_NAME)
+    global platform; platform = configuration.get("CONFIG","platform")
+
     args = parser_args()
     output = args.output
     docker_file = None
@@ -46,22 +52,25 @@ def append(file, line):
 def create_docker_file(output, properties, templates):
     from datetime import date
 
-    props = get_properties(properties)
+    props = get_properties(platform, properties)
     append(output, '# Create by DockerFile Maker\n'
                  '# Create date:' + date.today().isoformat() + "\n"
                  '# Author: Jeff Wang\n')
-    template_file = open(COMMON_TEMPLATE+'.'+DEFAULT_TEMPLATE_POSTFIX, "r")
+    template_file = open(platform + "/" + COMMON_TEMPLATE+'.'+DEFAULT_TEMPLATE_POSTFIX, "r")
     make_docker_file(output, template_file, props)
 
     for template in templates:
-        template_file = open(template+'.'+DEFAULT_TEMPLATE_POSTFIX, "r")
+        template_file = open(platform + "/" + template+'.'+DEFAULT_TEMPLATE_POSTFIX, "r")
         make_docker_file(output, template_file, props)
 
 
-def get_properties(properties):
+def get_properties(path, properties):
     config = ConfigParser.ConfigParser()
     config.optionxform = str
-    config.read(properties)
+    if(None == path):
+        config.read(properties)
+    else:
+        config.read(path + "/" + properties)
     return config
 
 

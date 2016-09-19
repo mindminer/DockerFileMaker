@@ -1,5 +1,8 @@
 #########################################
 ## 安装 Tomcat
+#
+# Run with : ${CATALINA_BASE}/run.sh start ${CATALINA_INSTANCE_NAME} && tail -f ${CATALINA_BASE}/instance_${CATALINA_INSTANCE_NAME}/logs/catalina.out
+
 
 USER root
 

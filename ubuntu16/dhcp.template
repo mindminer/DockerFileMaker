@@ -1,0 +1,32 @@
+############################
+# DHCP
+#
+
+# Use "-p 67:67/udp -p 68:68/udp" for run command
+EXPOSE 67/udp
+EXPOSE 68/udp
+
+RUN apt-get install -y iproute net-tools
+RUN apt-get install -y isc-dhcp-server
+
+RUN if [ -f "/etc/default/isc-dhcp-server" ]; then sed -i "s/INTERFACES=\"\"/INTERFACES=\"$${DHCP_SERVICE_INTERFACE}\"/g" /etc/default/isc-dhcp-server; fi
+
+RUN export MAC_ADDRESS=`arp -n | awk '/$${DHCP_SERVICE_INTERFACE}/{print $3}'` && echo "\
+subnet $${DHCP_SUBNET} netmask $${DHCP_NETMASK} { \n\
+  range $${DHCP_RANGE}; \n\
+  option routers $${DHCP_DEFAULT_ROUTERS}; \n\
+  option domain-name-servers $${DHCP_DEFAULT_DNS}; \n\
+  option domain-name \"$${DHCP_DOMAIN_NAME}\"; \n\
+  option broadcast-address $${DHCP_BROADCAST}; \n\
+  host self { \n\
+    hardware ethernet $MAC_ADDRESS; \n\
+    fixed-address $${DHCP_SERVICE_INTERFACE_IP}; \n\
+  } \n\
+}" \
+>> /etc/dhcp/dhcpd.conf
+
+# systemctl 命令需要 systemd 支持
+RUN systemctl enable sysv-init-script.service
+RUN systemctl enable isc-dhcp-server.service && systemctl start isc-dhcp-server.service
+
+# ENTRYPOINT tail -f /var/log/syslog
